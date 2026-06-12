@@ -43,6 +43,13 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<Respon
             notes
         })
 
+        await redis.del(`stats:${user._id}`);
+
+        const keys = await redis.keys(`jobs:${user._id}:*`);
+        if (keys.length) {
+            await redis.del(...keys);
+        }
+
         return res
             .status(201)
             .json({
@@ -107,6 +114,15 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<Respon
         }
 
         await currentJob.save();
+
+        await redis.del(`stats:${user._id}`);
+        await redis.del(`job:${user._id}:${jobId}`);
+
+        const keys = await redis.keys(`jobs:${user._id}:*`);
+        if (keys.length) {
+            await redis.del(...keys);
+        }
+
         return res.status(200).json({
             status: 200,
             data: currentJob,
@@ -152,6 +168,14 @@ export const deleteJob = async (req: AuthRequest, res: Response): Promise<Respon
             });
         }
 
+        await redis.del(`stats:${user._id}`);
+        await redis.del(`job:${user._id}:${jobId}`);
+
+        const keys = await redis.keys(`jobs:${user._id}:*`);
+        if (keys.length) {
+            await redis.del(...keys);
+        }
+
         return res.status(200).json({
             status: 200,
             message: "Job deleted successfully!",
@@ -188,8 +212,10 @@ export const getJobs = async (req: AuthRequest, res: Response): Promise<Response
             limit = "10",
         } = req.query;
 
+        const cacheKey = `jobs:${user._id}:${search || "all"}:${status || "all"}:${source || "all"}:${sortBy}:${order}:${page}:${limit}`;
+
         const query: any = {
-            userId: user._id,
+            userId: new mongoose.Types.ObjectId(user._id),
         };
 
         if (search) {
@@ -220,6 +246,13 @@ export const getJobs = async (req: AuthRequest, res: Response): Promise<Response
         const pageNumber = Number(page);
         const limitNumber = Number(limit);
 
+        const cachedJobs = await redis.get(cacheKey);
+        if (cachedJobs) {
+            return res.status(200).json(
+                JSON.parse(cachedJobs)
+            );
+        }
+
         const jobs = await Job.find(query)
             .sort({
                 [sortBy as string]: order === "asc" ? 1 : -1,
@@ -229,7 +262,7 @@ export const getJobs = async (req: AuthRequest, res: Response): Promise<Response
 
         const totalJobs = await Job.countDocuments(query);
 
-        return res.status(200).json({
+        const responseData = {
             status: 200,
             data: jobs,
             pagination: {
@@ -238,7 +271,15 @@ export const getJobs = async (req: AuthRequest, res: Response): Promise<Response
                 limit: limitNumber,
                 totalPages: Math.ceil(totalJobs / limitNumber),
             },
-        });
+        };
+
+        await redis.setex(
+            cacheKey,
+            300,
+            JSON.stringify(responseData)
+        );
+
+        return res.status(200).json(responseData);
     } catch (error) {
         console.error(error);
         return res.status(500).json({
@@ -262,10 +303,21 @@ export const getJobById = async (req: AuthRequest, res: Response): Promise<Respo
         const jobId = req?.params?.id as string | undefined;
 
         if (!jobId) {
-            return res.status(404).json({
-                status: 404,
-                message: "job Id is required!",
+            return res.status(400).json({
+                status: 400,
+                message: "Job ID is required!",
             });
+        }
+
+        const cacheKey = `job:${user._id}:${jobId}`;
+        const cacheJob = await redis.get(cacheKey);
+
+        if (cacheJob) {
+            return res
+                .status(200)
+                .json(
+                    JSON.parse(cacheJob)
+                )
         }
 
         const currentJob = await Job.findOne({
@@ -279,11 +331,20 @@ export const getJobById = async (req: AuthRequest, res: Response): Promise<Respo
                 message: "Job not found!",
             });
         }
-        return res.status(200).json({
+
+        const responseData = {
             status: 200,
             data: currentJob,
             message: `Job found for jobId: ${jobId}`,
-        });
+        }
+
+        await redis.setex(
+            cacheKey,
+            300,
+            JSON.stringify(responseData)
+        )
+
+        return res.status(200).json(responseData);
     } catch (error) {
         console.error(error);
         return res.status(500).json({
@@ -302,6 +363,16 @@ export const getJobStats = async (req: AuthRequest, res: Response): Promise<Resp
                 status: 401,
                 message: "User not found!",
             });
+        }
+
+        //redis implimentation
+        const cacheKey = `stats:${user._id}`;
+        const cachedStats = await redis.get(cacheKey);
+
+        if (cachedStats) {
+            return res.status(200).json(
+                JSON.parse(cachedStats)
+            );
         }
 
         const jobStats = await Job.aggregate(
@@ -343,8 +414,7 @@ export const getJobStats = async (req: AuthRequest, res: Response): Promise<Resp
         )
 
         const stats = jobStats[0];
-
-        return res.status(200).json({
+        const responseData = {
             status: 200,
             data: {
                 totalJobs: stats.totalJobs[0]?.count || 0,
@@ -352,7 +422,13 @@ export const getJobStats = async (req: AuthRequest, res: Response): Promise<Resp
                 statusStats: stats.statusStats,
             },
             message: "Job stats fetched successfully!",
-        });
+        };
+        await redis.setex(
+            cacheKey,
+            300,
+            JSON.stringify(responseData)
+        );
+        return res.status(200).json(responseData);
     } catch (error) {
         console.error(error);
         return res.status(500).json({
