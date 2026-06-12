@@ -1,20 +1,39 @@
 import { Request } from "express";
 
-// User Types
-export interface IUser {
+export interface User {
     _id: string;
     name: string;
     email: string;
     password: string;
-    resume: string;
+    resume?: string;
     createdAt: Date;
 }
 
-// Job Types
+export interface RegisterUserBody {
+    fullName: string;
+    email: string;
+    password: string;
+}
+
+export interface LoginUserBody {
+    email: string;
+    password: string;
+}
+
+export interface ResetPasswordBody {
+    currentPassword: string;
+    newPassword: string;
+}
+
+export interface UpdateUserBody {
+    name?: string;
+    resume?: string;
+}
+
 export type JobStatus = "Applied" | "Interview" | "Offer" | "Rejected";
 export type JobSource = "LinkedIn" | "Naukri" | "Wellfound" | "Other";
 
-export interface IJob {
+export interface Job {
     _id: string;
     userId: string;
     company: string;
@@ -28,13 +47,12 @@ export interface IJob {
     notes?: string;
 }
 
-// Auth Types
-export interface IAuthPayload {
-    userId: string;
+export interface AuthPayload {
+    _id: string,
+    name: string;
     email: string;
 }
 
-// Extending Express Request to include user
-export interface IAuthRequest extends Request {
-    user?: IAuthPayload;
+export interface AuthRequest extends Request {
+    user?: AuthPayload;
 }
