@@ -30,12 +30,17 @@ export interface UpdateUserBody {
     resume?: string;
 }
 
+export interface UpdateJobBody {
+    jobId?: string;
+    status?: JobStatus;
+    followUpSent?: boolean;
+    notes?: string
+}
+
 export type JobStatus = "Applied" | "Interview" | "Offer" | "Rejected";
 export type JobSource = "LinkedIn" | "Naukri" | "Wellfound" | "Other";
 
-export interface Job {
-    _id: string;
-    userId: string;
+export interface JobBody {
     company: string;
     role: string;
     source: JobSource;

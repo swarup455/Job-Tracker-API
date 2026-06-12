@@ -2,6 +2,7 @@ import User from "../models/user.model";
 import { Response } from "express";
 import { AuthRequest, LoginUserBody, RegisterUserBody, ResetPasswordBody, UpdateUserBody } from "../types";
 import { generateToken, TokenPayload } from "../utils/generateToken";
+import redis from "../config/redis";
 
 export const registerUser = async (req: AuthRequest, res: Response): Promise<Response> => {
     try {
@@ -66,6 +67,21 @@ export const loginUser = async (req: AuthRequest, res: Response): Promise<Respon
                         message: "All fields are required!"
                     }
                 )
+        }
+
+        const key = `login_attempts:${email}`;
+        const attempts = await redis.incr(key);
+
+        if (attempts === 1) {
+            await redis.expire(key, 15 * 60);
+        }
+
+        if (attempts > 5) {
+            const ttl = await redis.ttl(key);
+            return res.status(429).json({
+                status: 429,
+                message: `Too many login attempts!! Try again in ${Math.ceil(ttl / 60)} minutes.`
+            });
         }
 
         const user = await User.findOne({ email }).select("+password");;
@@ -245,6 +261,89 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<Respo
             message: "User updated successfully!!"
         });
 
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+}
+
+export const deleteAccount = async (req: AuthRequest, res: Response): Promise<Response> => {
+    try {
+        const user = req?.user;
+
+        if (!user) {
+            return res.status(401).json({
+                status: 401,
+                message: "Unauthorized access!!"
+            });
+        }
+
+        const { password } = req.body as { password: string };
+
+        if (!password) {
+            return res.status(400).json({
+                status: 400,
+                message: "Password is required!!"
+            });
+        }
+
+        const currentUser = await User.findById(user?._id).select("+password");
+
+        if (!currentUser) {
+            return res.status(404).json({
+                status: 404,
+                message: "User not found!!"
+            });
+        }
+
+        const isPasswordValid = await currentUser.comparePassword(password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                status: 401,
+                message: "Invalid password!!"
+            });
+        }
+
+        await User.findByIdAndDelete(user?._id);
+
+        return res
+            .status(200)
+            .clearCookie("token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+            })
+            .json({
+                status: 200,
+                message: "Account deleted successfully!!"
+            });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+}
+
+export const logoutUser = async (req: AuthRequest, res: Response): Promise<Response> => {
+    try {
+        return res
+            .status(200)
+            .clearCookie("token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+            })
+            .json({
+                status: 200,
+                message: "User logged out successfully!!"
+            });
     } catch (error) {
         console.error(error);
         return res.status(500).json({

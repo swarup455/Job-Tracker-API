@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 import authRoutes from "./routes/authRoutes";
-// import jobRoutes from "./routes/job.routes";
+import jobRoutes from "./routes/jobRoutes";
 // import aiRoutes from "./routes/ai.routes";
 // import { errorMiddleware } from "./middlewares/error.middleware";
 import "./config/redis";
@@ -18,7 +18,7 @@ app.use(express.json());
 
 // all routes are written here
 app.use("/api/auth", authRoutes);
-// app.use("/api/jobs", jobRoutes);
+app.use("/api/jobs", jobRoutes);
 // app.use("/api/ai", aiRoutes);
 
 // Health check
