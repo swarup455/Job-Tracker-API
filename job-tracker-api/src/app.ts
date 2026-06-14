@@ -5,6 +5,7 @@ import { connectDB } from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import jobRoutes from "./routes/jobRoutes";
 import aiRoutes from "./routes/aiRoutes";
+import { startReminderCron } from "./jobs/reminderCron";
 import "./config/redis";
 
 dotenv.config();
@@ -31,5 +32,6 @@ const startServer = async () => {
 };
 
 startServer();
+startReminderCron();
 
 export default app;

@@ -7,17 +7,7 @@ import redis from "../config/redis";
 export const registerUser = async (req: AuthRequest, res: Response): Promise<Response> => {
     try {
         const { fullName, email, password } = req.body as RegisterUserBody;
-        if (!fullName || !email || !password) {
-            return res
-                .status(400)
-                .json(
-                    {
-                        status: 400,
-                        message: "All fields are required!"
-                    }
-                )
-        }
-
+        
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res
