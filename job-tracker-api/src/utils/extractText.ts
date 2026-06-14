@@ -1,12 +1,13 @@
 import mammoth from "mammoth";
-const pdfParse = require("pdf-parse");
+import { PDFParse } from "pdf-parse";
 
 export const extractTextFromFile = async (
     file: Express.Multer.File
 ): Promise<string> => {
     if (file.mimetype === "application/pdf") {
-        const data = await pdfParse(file.buffer);
-        return data.text.trim();
+        const parser = new PDFParse({ data: file.buffer });
+        const result = await parser.getText();
+        return result.text.trim();
     }
 
     if (

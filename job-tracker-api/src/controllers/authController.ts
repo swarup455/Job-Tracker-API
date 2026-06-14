@@ -91,6 +91,7 @@ export const loginUser = async (req: AuthRequest, res: Response): Promise<Respon
             return res.status(401).json({ status: 401, message: "Invalid credentials!" });
         }
         const payload: TokenPayload = {
+            _id: user._id.toString(),
             name: user?.name,
             email: user?.email
         }

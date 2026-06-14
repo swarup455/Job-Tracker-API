@@ -130,7 +130,15 @@ export const analyzeJobApplication = async (req: AuthRequest, res: Response): Pr
             return res.status(401).json({ status: 401, message: "User not found!" });
         }
 
-        const { jobDescriptionText }: { jobDescriptionText: string } = req.body;
+        const jobDescription = req?.file;
+        if (!jobDescription) {
+            return res.status(400).json({
+                success: false,
+                message: "Upload Job description first!!",
+            });
+        }
+        const jobDescriptionText = await extractTextFromFile(jobDescription);
+
         if (!jobDescriptionText) {
             return res.status(400).json({
                 success: false,
@@ -192,7 +200,15 @@ export const generateSkillRoadmap = async (req: AuthRequest, res: Response): Pro
             return res.status(401).json({ status: 401, message: "User not found!" });
         }
 
-        const { jobDescriptionText }: { jobDescriptionText: string } = req.body;
+        const jobDescription = req?.file;
+        if (!jobDescription) {
+            return res.status(400).json({
+                success: false,
+                message: "Upload Job description first!!",
+            });
+        }
+        const jobDescriptionText = await extractTextFromFile(jobDescription);
+
         if (!jobDescriptionText) {
             return res.status(400).json({
                 success: false,
@@ -261,7 +277,15 @@ export const generateInterviewQuestions = async (req: AuthRequest, res: Response
             return res.status(401).json({ status: 401, message: "User not found!" });
         }
 
-        const { jobDescriptionText }: { jobDescriptionText: string } = req.body;
+        const jobDescription = req?.file;
+        if (!jobDescription) {
+            return res.status(400).json({
+                success: false,
+                message: "Upload Job description first!!",
+            });
+        }
+        const jobDescriptionText = await extractTextFromFile(jobDescription);
+
         if (!jobDescriptionText) {
             return res.status(400).json({
                 success: false,
@@ -323,7 +347,16 @@ export const detectJobScam = async (req: AuthRequest, res: Response): Promise<Re
             return res.status(401).json({ status: 401, message: "User not found!" });
         }
 
-        const { company, jobDescription, jobLink }: ScamDetectionBody = req.body;
+        const { company, jobLink }: ScamDetectionBody = req.body;
+
+        const jobDescriptionFile = req?.file;
+        if (!jobDescriptionFile) {
+            return res.status(400).json({
+                success: false,
+                message: "Upload Job description first!!",
+            });
+        }
+        const jobDescription = await extractTextFromFile(jobDescriptionFile);
 
         if (!jobDescription || jobDescription.trim().length < 20) {
             return res.status(400).json({

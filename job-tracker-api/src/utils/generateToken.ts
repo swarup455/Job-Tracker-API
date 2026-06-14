@@ -1,6 +1,7 @@
 import jwt, { SignOptions, JwtPayload } from "jsonwebtoken";
 
 export interface TokenPayload {
+    _id: string,
     name: string;
     email: string;
 }
