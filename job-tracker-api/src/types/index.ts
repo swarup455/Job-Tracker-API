@@ -61,3 +61,34 @@ export interface AuthPayload {
 export interface AuthRequest extends Request {
     user?: AuthPayload;
 }
+
+export interface SummarizeJDBody {
+    jobDescription: string;
+}
+
+export interface AnalyzeApplicationBody {
+    resume: string;
+    jobDescription: string;
+}
+
+export interface SkillRoadmapBody {
+    missingSkills: string[];
+}
+
+export interface InterviewQuestionBody {
+    resume: string;
+    jobDescription: string;
+}
+
+export interface ScamDetectionBody {
+    company?: string;
+    jobDescription: string;
+    jobLink?: string;
+}
+
+export interface GenerateMessageBody {
+    type: "linkedin" | "cold-email" | "whatsapp" | "referral";
+    company: string;
+    role: string;
+    recipientName?: string;
+}
