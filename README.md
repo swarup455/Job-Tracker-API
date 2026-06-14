@@ -332,7 +332,7 @@ After the email is sent, the `followUpSent` field for each included job is updat
 
 This project does not currently have an automated test suite. All endpoints were manually tested using Postman during development.
 
-A PDF containing screenshots of Postman requests and responses for each endpoint is included in this repository ([JobTracker-PostmanTesting-Screenshots.pdf](./public/JobTracker-PostmanTesting-Screenshots.pdf)). It covers:
+A PDF containing screenshots of Postman requests and responses for each endpoint is included in this repository [JobTracker-PostmanTesting-Screenshots.pdf](./public/JobTracker-PostmanTesting-Screenshots.pdf?raw=true). It covers:
 
 - User registration and login
 - Fetching current user details
