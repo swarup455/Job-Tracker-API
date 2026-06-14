@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { AuthRequest, ScamDetectionBody } from "../types";
+import { AuthRequest, GenerateMessageBody, ScamDetectionBody } from "../types";
 import { extractTextFromFile } from "../utils/extractText";
 import User from "../models/user.model";
 import {
